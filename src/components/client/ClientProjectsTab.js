@@ -6,6 +6,8 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export const ClientProjectsTab = ({ clientName }) => {
     const { projects, setProjects } = useApp();
@@ -14,9 +16,18 @@ export const ClientProjectsTab = ({ clientName }) => {
 
     const clientProjects = projects.filter(project => project.client === clientName);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    const totalPages = Math.ceil(clientProjects.length / itemsPerPage);
+    const paginatedProjects = clientProjects.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
+
     const handleSelectAll = (checked) => {
         if (checked) {
-            setSelectedRows(clientProjects.map(p => p.id));
+            setSelectedRows(paginatedProjects.map(p => p.id));
         } else {
             setSelectedRows([]);
         }
@@ -111,7 +122,7 @@ export const ClientProjectsTab = ({ clientName }) => {
                             <tr>
                                 <th className="w-12 py-3 px-4">
                                     <Checkbox
-                                        checked={selectedRows.length === clientProjects.length && clientProjects.length > 0}
+                                        checked={selectedRows.length === paginatedProjects.length && paginatedProjects.length > 0}
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </th>
@@ -126,8 +137,8 @@ export const ClientProjectsTab = ({ clientName }) => {
                             </tr>
                         </thead>
                         <tbody className="bg-white">
-                            {clientProjects.length > 0 ? (
-                                clientProjects.map((project) => (
+                            {paginatedProjects.length > 0 ? (
+                                paginatedProjects.map((project) => (
                                     <tr key={project.id} className="border-t hover:bg-gray-50">
                                         <td className="py-3 px-4">
                                             <Checkbox
@@ -168,6 +179,53 @@ export const ClientProjectsTab = ({ clientName }) => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, clientProjects.length)} of {clientProjects.length}
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                            {[...Array(totalPages)].map((_, i) => (
+                                <PaginationItem key={i}>
+                                    <PaginationLink
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        isActive={currentPage === i + 1}
+                                        className="cursor-pointer"
+                                    >
+                                        {i + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                    <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+                        setItemsPerPage(Number(val));
+                        setCurrentPage(1);
+                    }}>
+                        <SelectTrigger className="w-20">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardContent>
         </Card>

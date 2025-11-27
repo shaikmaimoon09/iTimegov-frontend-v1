@@ -10,6 +10,7 @@ import { Badge } from '../components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Checkbox } from '../components/ui/checkbox';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../components/ui/pagination';
 
 export const Clients = () => {
   const { clients, setClients, setContacts, contacts, currentUser } = useApp();
@@ -44,6 +45,15 @@ export const Clients = () => {
   const [clientContacts, setClientContacts] = useState([
     { name: '', email: '', phone: '', designation: '' }
   ]);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const totalPages = Math.ceil(clients.length / itemsPerPage);
+  const paginatedClients = clients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleAddIndustry = () => {
     if (!newIndustryType.trim()) return;
@@ -123,7 +133,7 @@ export const Clients = () => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows(clients.map(c => c.id));
+      setSelectedRows(paginatedClients.map(c => c.id));
     } else {
       setSelectedRows([]);
     }
@@ -394,7 +404,7 @@ export const Clients = () => {
                 <tr>
                   <th className="w-12 py-3 px-4">
                     <Checkbox
-                      checked={selectedRows.length === clients.length && clients.length > 0}
+                      checked={selectedRows.length === paginatedClients.length && paginatedClients.length > 0}
                       onCheckedChange={handleSelectAll}
                     />
                   </th>
@@ -408,7 +418,7 @@ export const Clients = () => {
                 </tr>
               </thead>
               <tbody className="bg-white">
-                {clients.map((client) => (
+                {paginatedClients.map((client) => (
                   <tr key={client.id} className="border-t hover:bg-gray-50">
                     <td className="py-3 px-4">
                       <Checkbox
@@ -436,6 +446,53 @@ export const Clients = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-gray-600 whitespace-nowrap">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, clients.length)} of {clients.length}
+            </div>
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+                {[...Array(totalPages)].map((_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      onClick={() => setCurrentPage(i + 1)}
+                      isActive={currentPage === i + 1}
+                      className="cursor-pointer"
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+            <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+              setItemsPerPage(Number(val));
+              setCurrentPage(1);
+            }}>
+              <SelectTrigger className="w-20">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>

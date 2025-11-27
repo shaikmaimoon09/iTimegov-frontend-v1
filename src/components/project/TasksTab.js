@@ -9,6 +9,7 @@ import { Textarea } from '../ui/textarea';
 import { Plus, AlertCircle, Upload, Trash2, Eye, Edit } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
 import '../CSSFILES/TasksTab.css';
 export const TasksTab = ({ project }) => {
   const { addTask, updateTask, employees, addTaskRequest, currentUser } = useApp();
@@ -41,6 +42,16 @@ export const TasksTab = ({ project }) => {
     evidence: null,
     proposedEndDate: ''
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const tasks = project.tasks || [];
+  const totalPages = Math.ceil(tasks.length / itemsPerPage);
+  const paginatedTasks = tasks.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleAssigneeChange = (value) => {
     const employee = employees.find(e => e.username === value);
@@ -123,7 +134,7 @@ export const TasksTab = ({ project }) => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows((project.tasks || []).map(t => t.id));
+      setSelectedRows(paginatedTasks.map(t => t.id));
     } else {
       setSelectedRows([]);
     }
@@ -420,13 +431,13 @@ export const TasksTab = ({ project }) => {
       </Dialog>
 
       {/* Tasks Table */}
-      <div className="border rounded-lg overflow-hidden shadow-sm overflow-x-auto" style={{scrollbarColor: '#ffffff #f1f1f1', scrollbarWidth: 'thin'}}>
-         <table className="w-full">
+      <div className="border rounded-lg overflow-hidden shadow-sm overflow-x-auto" style={{ scrollbarColor: '#ffffff #f1f1f1', scrollbarWidth: 'thin' }}>
+        <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="w-12 py-3 px-4">
                 <Checkbox
-                  checked={selectedRows.length === (project.tasks || []).length && (project.tasks || []).length > 0}
+                  checked={selectedRows.length === paginatedTasks.length && paginatedTasks.length > 0}
                   onCheckedChange={handleSelectAll}
                 />
               </th>
@@ -443,8 +454,8 @@ export const TasksTab = ({ project }) => {
             </tr>
           </thead>
           <tbody className="bg-white">
-            {project.tasks && project.tasks.length > 0 ? (
-              project.tasks.map((task) => (
+            {paginatedTasks.length > 0 ? (
+              paginatedTasks.map((task) => (
                 <tr key={task.id} className="border-t hover:bg-gray-50" data-testid={`task-row-${task.id}`}>
                   <td className="py-3 px-4">
                     <Checkbox
@@ -459,15 +470,15 @@ export const TasksTab = ({ project }) => {
                   <td className="py-3 px-4 text-sm whitespace-nowrap">${task.estimatedCost}</td>
                   <td className="py-3 px-4">
                     {task.locked ? (
-                      <Badge variant="destructive" className="bg-red-600" data-testid={`locked-badge-${task.id}`}>
+                      <Badge variant="destructive" className="bg-red-600 whitespace-nowrap" data-testid={`locked-badge-${task.id}`}>
                         <AlertCircle className="h-3 w-3 mr-1" />
                         LOCKED
                       </Badge>
                     ) : (
                       <Badge
-                        className={`${task.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                            task.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-blue-100 text-blue-800'
+                        className={`whitespace-nowrap ${task.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                          task.status === 'In Progress' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-blue-100 text-blue-800'
                           }`}
                       >
                         {task.status}
@@ -500,6 +511,53 @@ export const TasksTab = ({ project }) => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600 whitespace-nowrap">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, tasks.length)} of {tasks.length}
+        </div>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            {[...Array(totalPages)].map((_, i) => (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(i + 1)}
+                  isActive={currentPage === i + 1}
+                  className="cursor-pointer"
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+        <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+          setItemsPerPage(Number(val));
+          setCurrentPage(1);
+        }}>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );

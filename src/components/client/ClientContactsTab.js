@@ -7,12 +7,23 @@ import { Checkbox } from '../ui/checkbox';
 import { Eye, Edit, Trash2, Plus } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Input } from '../ui/input';
+
 import { Label } from '../ui/label';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export const ClientContactsTab = ({ clientName }) => {
     const { contacts, setContacts } = useApp();
+
+    // selection + dialogs
     const [selectedRows, setSelectedRows] = useState([]);
     const [showAddDialog, setShowAddDialog] = useState(false);
+
+    // pagination state
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // form state for adding a new contact
     const [newContact, setNewContact] = useState({
         name: '',
         email: '',
@@ -21,11 +32,18 @@ export const ClientContactsTab = ({ clientName }) => {
         status: 'Active'
     });
 
-    const clientContacts = contacts.filter(contact => contact.company === clientName);
+    // Filter contacts for this client
+    const clientContacts = contacts.filter(c => c.company === clientName);
+
+    const totalPages = Math.max(1, Math.ceil(clientContacts.length / itemsPerPage));
+    const paginatedContacts = clientContacts.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const handleSelectAll = (checked) => {
         if (checked) {
-            setSelectedRows(clientContacts.map(c => c.id));
+            setSelectedRows(paginatedContacts.map(c => c.id));
         } else {
             setSelectedRows([]);
         }
@@ -40,6 +58,7 @@ export const ClientContactsTab = ({ clientName }) => {
     };
 
     const handleDelete = () => {
+        if (selectedRows.length === 0) return;
         if (window.confirm(`Are you sure you want to delete ${selectedRows.length} contact(s)?`)) {
             setContacts(contacts.filter(c => !selectedRows.includes(c.id)));
             setSelectedRows([]);
@@ -199,7 +218,7 @@ export const ClientContactsTab = ({ clientName }) => {
                             <tr>
                                 <th className="w-12 py-3 px-4">
                                     <Checkbox
-                                        checked={selectedRows.length === clientContacts.length && clientContacts.length > 0}
+                                        checked={selectedRows.length === paginatedContacts.length && paginatedContacts.length > 0}
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </th>
@@ -211,8 +230,8 @@ export const ClientContactsTab = ({ clientName }) => {
                             </tr>
                         </thead>
                         <tbody className="bg-white">
-                            {clientContacts.length > 0 ? (
-                                clientContacts.map((contact) => (
+                            {paginatedContacts.length > 0 ? (
+                                paginatedContacts.map((contact) => (
                                     <tr key={contact.id} className="border-t hover:bg-gray-50">
                                         <td className="py-3 px-4">
                                             <Checkbox
@@ -238,6 +257,53 @@ export const ClientContactsTab = ({ clientName }) => {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Pagination */}
+                <div className="flex items-center justify-between mt-4">
+                    <div className="text-sm text-gray-600 whitespace-nowrap">
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, clientContacts.length)} of {clientContacts.length}
+                    </div>
+                    <Pagination>
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                            {[...Array(totalPages)].map((_, i) => (
+                                <PaginationItem key={i}>
+                                    <PaginationLink
+                                        onClick={() => setCurrentPage(i + 1)}
+                                        isActive={currentPage === i + 1}
+                                        className="cursor-pointer"
+                                    >
+                                        {i + 1}
+                                    </PaginationLink>
+                                </PaginationItem>
+                            ))}
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                    <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+                        setItemsPerPage(Number(val));
+                        setCurrentPage(1);
+                    }}>
+                        <SelectTrigger className="w-20">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="10">10</SelectItem>
+                            <SelectItem value="20">20</SelectItem>
+                            <SelectItem value="50">50</SelectItem>
+                        </SelectContent>
+                    </Select>
                 </div>
             </CardContent>
         </Card>

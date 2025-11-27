@@ -8,6 +8,7 @@ import { Plus, Trash2, Eye, Edit } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Checkbox } from '../ui/checkbox';
 import { format } from 'date-fns';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
 
 export const LabourCategory = () => {
     const { labourCategories, addLabourCategory, currentUser } = useApp();
@@ -31,6 +32,15 @@ export const LabourCategory = () => {
         hourlyCost: '',
         billingRate: ''
     });
+
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    const totalPages = Math.ceil(labourCategories.length / itemsPerPage);
+    const paginatedCategories = labourCategories.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
     const handleAddCategoryType = () => {
         if (!newCategoryType.trim()) return;
@@ -61,7 +71,7 @@ export const LabourCategory = () => {
 
     const handleSelectAll = (checked) => {
         if (checked) {
-            setSelectedRows(labourCategories.map(c => c.id));
+            setSelectedRows(paginatedCategories.map(c => c.id));
         } else {
             setSelectedRows([]);
         }
@@ -255,7 +265,7 @@ export const LabourCategory = () => {
                         <tr>
                             <th className="w-12 py-3 px-4">
                                 <Checkbox
-                                    checked={selectedRows.length === labourCategories.length && labourCategories.length > 0}
+                                    checked={selectedRows.length === paginatedCategories.length && paginatedCategories.length > 0}
                                     onCheckedChange={(checked) => handleSelectAll(checked)}
                                 />
                             </th>
@@ -267,8 +277,8 @@ export const LabourCategory = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white">
-                        {labourCategories.length > 0 ? (
-                            labourCategories.map((category) => (
+                        {paginatedCategories.length > 0 ? (
+                            paginatedCategories.map((category) => (
                                 <tr key={category.id} className="border-t hover:bg-gray-50" data-testid={`category-row-${category.id}`}>
                                     <td className="py-3 px-4">
                                         <Checkbox
@@ -293,6 +303,53 @@ export const LabourCategory = () => {
                     </tbody>
                 </table>
             </div>
-        </div>
+
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-gray-600 whitespace-nowrap">
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, labourCategories.length)} of {labourCategories.length}
+                </div>
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            />
+                        </PaginationItem>
+                        {[...Array(totalPages)].map((_, i) => (
+                            <PaginationItem key={i}>
+                                <PaginationLink
+                                    onClick={() => setCurrentPage(i + 1)}
+                                    isActive={currentPage === i + 1}
+                                    className="cursor-pointer"
+                                >
+                                    {i + 1}
+                                </PaginationLink>
+                            </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                            <PaginationNext
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                            />
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
+                <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+                    setItemsPerPage(Number(val));
+                    setCurrentPage(1);
+                }}>
+                    <SelectTrigger className="w-20">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="10">10</SelectItem>
+                        <SelectItem value="20">20</SelectItem>
+                        <SelectItem value="50">50</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </div >
     );
 };

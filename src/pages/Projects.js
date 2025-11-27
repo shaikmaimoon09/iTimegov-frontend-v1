@@ -25,7 +25,7 @@ export const Projects = () => {
     dateRange: { start: '', end: '' }
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [newProject, setNewProject] = useState({
     id: '',
@@ -404,7 +404,7 @@ export const Projects = () => {
 
           {/* Pagination */}
           <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-600 whitespace-nowrap">
               Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredProjects.length)} of {filteredProjects.length}
             </div>
             <Pagination>
@@ -434,7 +434,10 @@ export const Projects = () => {
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-            <Select value={itemsPerPage.toString()} onValueChange={(val) => console.log(val)}>
+            <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+              setItemsPerPage(Number(val));
+              setCurrentPage(1);
+            }}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>

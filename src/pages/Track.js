@@ -11,20 +11,30 @@ import { Plus, Calendar, Upload, Trash2, Edit } from 'lucide-react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
+// Sample labour categories - replace with your data source
+const LABOUR_CATEGORIES = [
+  { id: 1, name: 'Senior Developer' },
+  { id: 2, name: 'Junior Developer' },
+  { id: 3, name: 'QA Engineer' },
+  { id: 4, name: 'DevOps Engineer' },
+  { id: 5, name: 'Project Manager' },
+  { id: 6, name: 'UI/UX Designer' },
+];
+
 export const Track = () => {
   const { projects, addTimesheet, currentUser, employees } = useApp();
   const [viewMode, setViewMode] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedUser, setSelectedUser] = useState('shatru'); // Default to shatru username
+  const [selectedUser, setSelectedUser] = useState('shatru');
 
   // State for managing multiple timesheet rows in week view
   const [timesheetRows, setTimesheetRows] = useState([
-    { id: Date.now(), project: '', task: '', hours: {} }
+    { id: Date.now(), project: '', task: '', labourCategory: '', hours: {} }
   ]);
 
   // State for edit dialog
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingEntry, setEditingEntry] = useState(null); // { rowId, dayIndex, date }
+  const [editingEntry, setEditingEntry] = useState(null);
   const [editFormData, setEditFormData] = useState({
     duration: '',
     notes: '',
@@ -35,19 +45,19 @@ export const Track = () => {
   const [dayEntry, setDayEntry] = useState({
     project: '',
     task: '',
+    labourCategory: '',
     duration: '',
     notes: '',
     tags: '',
     files: null
   });
 
-
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 1 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   // Add a new timesheet row
   const handleAddTimesheetRow = () => {
-    setTimesheetRows([...timesheetRows, { id: Date.now(), project: '', task: '', hours: {} }]);
+    setTimesheetRows([...timesheetRows, { id: Date.now(), project: '', task: '', labourCategory: '', hours: {} }]);
   };
 
   // Delete a timesheet row
@@ -68,6 +78,13 @@ export const Track = () => {
   const handleTaskChange = (rowId, taskName) => {
     setTimesheetRows(timesheetRows.map(row =>
       row.id === rowId ? { ...row, task: taskName } : row
+    ));
+  };
+
+  // Update labour category for a row
+  const handleLabourCategoryChange = (rowId, labourCategory) => {
+    setTimesheetRows(timesheetRows.map(row =>
+      row.id === rowId ? { ...row, labourCategory } : row
     ));
   };
 
@@ -103,7 +120,7 @@ export const Track = () => {
   // Open edit dialog for a specific time entry cell
   const handleEditTimeEntry = (rowId, dayIndex, date) => {
     const row = timesheetRows.find(r => r.id === rowId);
-    setEditingEntry({ rowId, dayIndex, date, project: row.project, task: row.task });
+    setEditingEntry({ rowId, dayIndex, date, project: row.project, task: row.task, labourCategory: row.labourCategory });
     setEditFormData({
       duration: row.hours[dayIndex] || '',
       notes: '',
@@ -117,10 +134,8 @@ export const Track = () => {
   const handleSaveEditedEntry = () => {
     if (!editFormData.duration) return;
 
-    // Update the hours in the row
     handleHoursChange(editingEntry.rowId, editingEntry.dayIndex, editFormData.duration);
 
-    // Close dialog and reset
     setShowEditDialog(false);
     setEditingEntry(null);
     setEditFormData({
@@ -132,7 +147,7 @@ export const Track = () => {
   };
 
   const handleSaveDayEntry = () => {
-    if (!dayEntry.project || !dayEntry.task || !dayEntry.duration) return;
+    if (!dayEntry.project || !dayEntry.task || !dayEntry.labourCategory || !dayEntry.duration) return;
 
     const selectedProject = projects.find(p => p.name === dayEntry.project);
     const selectedTask = selectedProject?.tasks?.find(t => t.name === dayEntry.task);
@@ -144,6 +159,7 @@ export const Track = () => {
       projectId: selectedProject?.id,
       task: dayEntry.task,
       taskId: selectedTask?.id,
+      labourCategory: dayEntry.labourCategory,
       hours: parseFloat(dayEntry.duration),
       date: format(selectedDate, 'yyyy-MM-dd'),
       notes: dayEntry.notes,
@@ -157,6 +173,7 @@ export const Track = () => {
     setDayEntry({
       project: '',
       task: '',
+      labourCategory: '',
       duration: '',
       notes: '',
       tags: '',
@@ -237,6 +254,7 @@ export const Track = () => {
                     <tr>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Project</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Task</th>
+                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Labour Category</th>
                       {weekDays.map((day, i) => (
                         <th key={i} className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                           {format(day, 'EEE dd')}
@@ -280,6 +298,21 @@ export const Track = () => {
                             </SelectContent>
                           </Select>
                         </td>
+                        <td className="py-3 px-4">
+                          <Select
+                            value={row.labourCategory}
+                            onValueChange={(value) => handleLabourCategoryChange(row.id, value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {LABOUR_CATEGORIES.map(cat => (
+                                <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </td>
                         {weekDays.map((_, dayIndex) => (
                           <td key={dayIndex} className="py-3 px-4">
                             <div className="relative">
@@ -318,7 +351,7 @@ export const Track = () => {
                       </tr>
                     ))}
                     <tr className="border-t bg-gray-50">
-                      <td colSpan="2" className="py-3 px-4 font-semibold">Total</td>
+                      <td colSpan="3" className="py-3 px-4 font-semibold">Total</td>
                       {weekDays.map((_, dayIndex) => (
                         <td key={dayIndex} className="py-3 px-4 text-sm font-semibold">{getDayTotal(dayIndex)}</td>
                       ))}
@@ -380,6 +413,19 @@ export const Track = () => {
                       <SelectContent>
                         {availableTasks.map(t => (
                           <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="labourCategory">Labour Category</Label>
+                    <Select value={dayEntry.labourCategory} onValueChange={(value) => setDayEntry({ ...dayEntry, labourCategory: value })}>
+                      <SelectTrigger data-testid="select-labour-category">
+                        <SelectValue placeholder="Select Labour Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LABOUR_CATEGORIES.map(cat => (
+                          <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -454,6 +500,10 @@ export const Track = () => {
               </div>
             </div>
             <div>
+              <Label>Labour Category</Label>
+              <Input value={editingEntry?.labourCategory || ''} disabled className="bg-gray-100" />
+            </div>
+            <div>
               <Label htmlFor="edit-duration">Duration (hours)</Label>
               <Input
                 id="edit-duration"
@@ -498,6 +548,6 @@ export const Track = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div >
+    </div>
   );
 };

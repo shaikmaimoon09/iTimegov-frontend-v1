@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Trash2, Eye, Edit } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
 import '../CSSFILES/MembersTab.css';
 
 export const MembersTab = ({ project }) => {
@@ -26,6 +27,16 @@ export const MembersTab = ({ project }) => {
     assignedDate: new Date().toISOString().split('T')[0],
     assignedBy: currentUser
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const members = project.members || [];
+  const totalPages = Math.ceil(members.length / itemsPerPage);
+  const paginatedMembers = members.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleUsernameChange = (value) => {
     const employee = employees.find(e => e.username === value);
@@ -76,7 +87,7 @@ export const MembersTab = ({ project }) => {
 
   const handleSelectAll = (checked) => {
     if (checked) {
-      setSelectedRows((project.members || []).map(m => m.username));
+      setSelectedRows(paginatedMembers.map(m => m.username));
     } else {
       setSelectedRows([]);
     }
@@ -272,13 +283,13 @@ export const MembersTab = ({ project }) => {
       </div>
 
       {/* Members Table */}
-      <div className="border rounded-lg overflow-hidden shadow-sm overflow-x-auto" style={{scrollbarColor: '#ffffff #f1f1f1', scrollbarWidth: 'thin'}}>
-         <table className="w-full">
+      <div className="border rounded-lg overflow-hidden shadow-sm overflow-x-auto" style={{ scrollbarColor: '#ffffff #f1f1f1', scrollbarWidth: 'thin' }}>
+        <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
               <th className="w-12 py-3 px-4">
                 <Checkbox
-                  checked={selectedRows.length === (project.members || []).length && (project.members || []).length > 0}
+                  checked={selectedRows.length === paginatedMembers.length && paginatedMembers.length > 0}
                   onCheckedChange={(checked) => handleSelectAll(checked)}
                 />
               </th>
@@ -295,8 +306,8 @@ export const MembersTab = ({ project }) => {
             </tr>
           </thead>
           <tbody className="bg-white">
-            {project.members && project.members.length > 0 ? (
-              project.members.map((member, index) => (
+            {paginatedMembers.length > 0 ? (
+              paginatedMembers.map((member, index) => (
                 <tr key={index} className="border-t hover:bg-gray-50" data-testid={`member-row-${member.username}`}>
                   <td className="py-3 px-4">
                     <Checkbox
@@ -327,6 +338,53 @@ export const MembersTab = ({ project }) => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-gray-600 whitespace-nowrap">
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, members.length)} of {members.length}
+        </div>
+        <Pagination>
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                className={currentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+            {[...Array(totalPages)].map((_, i) => (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  onClick={() => setCurrentPage(i + 1)}
+                  isActive={currentPage === i + 1}
+                  className="cursor-pointer"
+                >
+                  {i + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                className={currentPage === totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+        <Select value={itemsPerPage.toString()} onValueChange={(val) => {
+          setItemsPerPage(Number(val));
+          setCurrentPage(1);
+        }}>
+          <SelectTrigger className="w-20">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="10">10</SelectItem>
+            <SelectItem value="20">20</SelectItem>
+            <SelectItem value="50">50</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
