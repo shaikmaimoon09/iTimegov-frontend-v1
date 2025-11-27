@@ -6,7 +6,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
-import { Plus, AlertCircle, Upload, Trash2, Eye, Edit } from 'lucide-react';
+import { Plus, AlertCircle, Upload, Filter, Trash2, Eye, Edit } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
@@ -43,15 +43,55 @@ export const TasksTab = ({ project }) => {
     proposedEndDate: ''
   });
 
+  const [filters, setFilters] = useState({
+    id: '',
+    name: '',
+    estimatedHours: '',
+    costPerHour: '',
+    estimatedCost: '',
+    status: '',
+    assignedTo: '',
+    startDate: '',
+    endDate: ''
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const tasks = project.tasks || [];
-  const totalPages = Math.ceil(tasks.length / itemsPerPage);
-  const paginatedTasks = tasks.slice(
+
+  const filteredTasks = tasks.filter(task => {
+    if (filters.id && !task.id.toLowerCase().includes(filters.id.toLowerCase())) return false;
+    if (filters.name && !task.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+    if (filters.estimatedHours && !task.estimatedHours.toString().includes(filters.estimatedHours)) return false;
+    if (filters.costPerHour && !task.costPerHour.toString().includes(filters.costPerHour)) return false;
+    if (filters.estimatedCost && !task.estimatedCost.toString().includes(filters.estimatedCost)) return false;
+    if (filters.status && filters.status !== 'all' && task.status !== filters.status) return false;
+    if (filters.assignedTo && filters.assignedTo !== 'all' && task.assignedTo !== filters.assignedTo) return false;
+    if (filters.startDate && task.startDate < filters.startDate) return false;
+    if (filters.endDate && task.endDate > filters.endDate) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredTasks.length / itemsPerPage);
+  const paginatedTasks = filteredTasks.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const clearFilters = () => {
+    setFilters({
+      id: '',
+      name: '',
+      estimatedHours: '',
+      costPerHour: '',
+      estimatedCost: '',
+      status: '',
+      assignedTo: '',
+      startDate: '',
+      endDate: ''
+    });
+  };
 
   const handleAssigneeChange = (value) => {
     const employee = employees.find(e => e.username === value);
@@ -177,192 +217,207 @@ export const TasksTab = ({ project }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h3 className="text-xl font-semibold text-gray-900">Tasks of Project {project.name}</h3>
-
-          {/* Toolbar - appears when rows are selected */}
-          {selectedRows.length > 0 && (
-            <div className="flex items-center gap-2 ml-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-              <span className="text-sm font-medium text-blue-900">
-                {selectedRows.length} selected
-              </span>
-              <div className="flex items-center gap-1 ml-2 border-l border-blue-300 pl-2">
-                {selectedRows.length === 1 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleView}
-                      className="h-8 w-8 p-0 hover:bg-blue-100"
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleEdit}
-                      className="h-8 w-8 p-0 hover:bg-blue-100"
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4 text-blue-600" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="h-8 w-8 p-0 hover:bg-red-100"
-                  title="Delete"
-                >
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button data-testid="add-task-btn" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Task
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            {selectedRows.length > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md border border-blue-100">
+                <span className="text-sm text-blue-700 font-medium">{selectedRows.length} selected</span>
+                <div className="h-4 w-px bg-blue-200 mx-2"></div>
+                <div className="flex items-center gap-1">
+                  {selectedRows.length === 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleView}
+                        className="h-8 w-8 p-0 hover:bg-blue-100"
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleEdit}
+                        className="h-8 w-8 p-0 hover:bg-blue-100"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+              <Filter className="h-4 w-4 mr-2" />
+              Clear Filters
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Task</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <div>
-                <Label htmlFor="task-id">Task ID *</Label>
-                <Input
-                  id="task-id"
-                  data-testid="input-task-id"
-                  value={newTask.id}
-                  onChange={(e) => setNewTask({ ...newTask, id: e.target.value })}
-                  placeholder="TSK-00742"
-                />
-              </div>
-              <div>
-                <Label htmlFor="task-name">Task Name *</Label>
-                <Input
-                  id="task-name"
-                  data-testid="input-task-name"
-                  value={newTask.name}
-                  onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
-                  placeholder="Enter task name"
-                />
-              </div>
-              <div className="col-span-2">
-                <Label htmlFor="description">Description</Label>
-                <Textarea
-                  id="description"
-                  data-testid="input-description"
-                  value={newTask.description}
-                  onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                  placeholder="Task description"
-                />
-              </div>
-              <div>
-                <Label htmlFor="estimated-hours">Estimated Hours *</Label>
-                <Input
-                  id="estimated-hours"
-                  data-testid="input-estimated-hours"
-                  type="number"
-                  value={newTask.estimatedHours}
-                  onChange={(e) => handleHoursChange(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="assigned-to">Assign To *</Label>
-                <Select value={newTask.assignedTo} onValueChange={handleAssigneeChange}>
-                  <SelectTrigger data-testid="select-assigned-to">
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.username}>
-                        {emp.username} (${emp.hourlyRate}/hr)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="cost-per-hour">Cost Per Hour</Label>
-                <Input
-                  id="cost-per-hour"
-                  data-testid="input-cost-per-hour"
-                  type="number"
-                  value={newTask.costPerHour}
-                  disabled
-                  placeholder="Auto-calculated"
-                />
-              </div>
-              <div>
-                <Label htmlFor="estimated-cost">Estimated Cost</Label>
-                <Input
-                  id="estimated-cost"
-                  data-testid="input-estimated-cost"
-                  type="number"
-                  value={newTask.estimatedCost}
-                  disabled
-                  placeholder="Auto-calculated"
-                />
-              </div>
-              <div>
-                <Label htmlFor="priority">Priority</Label>
-                <Select value={newTask.priority} onValueChange={(value) => setNewTask({ ...newTask, priority: value })}>
-                  <SelectTrigger data-testid="select-priority">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={newTask.status} onValueChange={(value) => setNewTask({ ...newTask, status: value })}>
-                  <SelectTrigger data-testid="select-task-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="In Progress">In Progress</SelectItem>
-                    <SelectItem value="Completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="start-date">Start Date *</Label>
-                <Input
-                  id="start-date"
-                  data-testid="input-task-start-date"
-                  type="date"
-                  value={newTask.startDate}
-                  onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label htmlFor="end-date">End Date *</Label>
-                <Input
-                  id="end-date"
-                  data-testid="input-task-end-date"
-                  type="date"
-                  value={newTask.endDate}
-                  onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-task-btn">Cancel</Button>
-              <Button onClick={handleAddTask} className="bg-blue-600 hover:bg-blue-700" data-testid="save-task-btn">Save</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            <Button
+              data-testid="download-btn"
+              variant="outline"
+              size="icon"
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            >
+              <Upload className="h-4 w-4" />
+            </Button>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button data-testid="add-task-btn" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Task
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add New Task</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div>
+                    <Label htmlFor="task-id">Task ID *</Label>
+                    <Input
+                      id="task-id"
+                      data-testid="input-task-id"
+                      value={newTask.id}
+                      onChange={(e) => setNewTask({ ...newTask, id: e.target.value })}
+                      placeholder="TSK-00742"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="task-name">Task Name *</Label>
+                    <Input
+                      id="task-name"
+                      data-testid="input-task-name"
+                      value={newTask.name}
+                      onChange={(e) => setNewTask({ ...newTask, name: e.target.value })}
+                      placeholder="Enter task name"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      data-testid="input-description"
+                      value={newTask.description}
+                      onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                      placeholder="Task description"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="estimated-hours">Estimated Hours *</Label>
+                    <Input
+                      id="estimated-hours"
+                      data-testid="input-estimated-hours"
+                      type="number"
+                      value={newTask.estimatedHours}
+                      onChange={(e) => handleHoursChange(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="assigned-to">Assign To *</Label>
+                    <Select value={newTask.assignedTo} onValueChange={handleAssigneeChange}>
+                      <SelectTrigger data-testid="select-assigned-to">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map(emp => (
+                          <SelectItem key={emp.id} value={emp.username}>
+                            {emp.username} (${emp.hourlyRate}/hr)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="cost-per-hour">Cost Per Hour</Label>
+                    <Input
+                      id="cost-per-hour"
+                      data-testid="input-cost-per-hour"
+                      type="number"
+                      value={newTask.costPerHour}
+                      disabled
+                      placeholder="Auto-calculated"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="estimated-cost">Estimated Cost</Label>
+                    <Input
+                      id="estimated-cost"
+                      data-testid="input-estimated-cost"
+                      type="number"
+                      value={newTask.estimatedCost}
+                      disabled
+                      placeholder="Auto-calculated"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="priority">Priority</Label>
+                    <Select value={newTask.priority} onValueChange={(value) => setNewTask({ ...newTask, priority: value })}>
+                      <SelectTrigger data-testid="select-priority">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={newTask.status} onValueChange={(value) => setNewTask({ ...newTask, status: value })}>
+                      <SelectTrigger data-testid="select-task-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="start-date">Start Date *</Label>
+                    <Input
+                      id="start-date"
+                      data-testid="input-task-start-date"
+                      type="date"
+                      value={newTask.startDate}
+                      onChange={(e) => setNewTask({ ...newTask, startDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="end-date">End Date *</Label>
+                    <Input
+                      id="end-date"
+                      data-testid="input-task-end-date"
+                      type="date"
+                      value={newTask.endDate}
+                      onChange={(e) => setNewTask({ ...newTask, endDate: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-task-btn">Cancel</Button>
+                  <Button onClick={handleAddTask} className="bg-blue-600 hover:bg-blue-700" data-testid="save-task-btn">Save</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
 
       {/* Task Request Dialog */}
@@ -452,6 +507,94 @@ export const TasksTab = ({ project }) => {
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">End Date</th>
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
             </tr>
+            {/* Filter Row */}
+            <tr className="bg-gray-50">
+              <th className="py-2 px-4"></th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Filter ID..."
+                  value={filters.id}
+                  onChange={(e) => setFilters({ ...filters, id: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Filter Name..."
+                  value={filters.name}
+                  onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Hours..."
+                  value={filters.estimatedHours}
+                  onChange={(e) => setFilters({ ...filters, estimatedHours: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Rate..."
+                  value={filters.costPerHour}
+                  onChange={(e) => setFilters({ ...filters, costPerHour: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Cost..."
+                  value={filters.estimatedCost}
+                  onChange={(e) => setFilters({ ...filters, estimatedCost: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="In Progress">In Progress</SelectItem>
+                    <SelectItem value="Completed">Completed</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                  </SelectContent>
+                </Select>
+              </th>
+              <th className="py-2 px-4">
+                <Select value={filters.assignedTo} onValueChange={(value) => setFilters({ ...filters, assignedTo: value === 'all' ? '' : value })}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {employees.map(emp => (
+                      <SelectItem key={emp.id} value={emp.username}>{emp.username}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Input
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4"></th>
+            </tr>
           </thead>
           <tbody className="bg-white">
             {paginatedTasks.length > 0 ? (
@@ -516,7 +659,7 @@ export const TasksTab = ({ project }) => {
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600 whitespace-nowrap">
-          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, tasks.length)} of {tasks.length}
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredTasks.length)} of {filteredTasks.length}
         </div>
         <Pagination>
           <PaginationContent>

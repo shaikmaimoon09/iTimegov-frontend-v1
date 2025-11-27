@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
 import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Input } from '../ui/input';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '../ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
@@ -14,16 +15,43 @@ export const ClientProjectsTab = ({ clientName }) => {
     const navigate = useNavigate();
     const [selectedRows, setSelectedRows] = useState([]);
 
+    const [filters, setFilters] = useState({
+        name: '',
+        type: '',
+        status: '',
+        startDate: '',
+        endDate: ''
+    });
+
     const clientProjects = projects.filter(project => project.client === clientName);
+
+    const filteredProjects = clientProjects.filter(project => {
+        if (filters.name && !project.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+        if (filters.type && filters.type !== 'all' && project.type !== filters.type) return false;
+        if (filters.status && filters.status !== 'all' && project.status !== filters.status) return false;
+        if (filters.startDate && project.startDate < filters.startDate) return false;
+        if (filters.endDate && project.endDate > filters.endDate) return false;
+        return true;
+    });
 
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const totalPages = Math.ceil(clientProjects.length / itemsPerPage);
-    const paginatedProjects = clientProjects.slice(
+    const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+    const paginatedProjects = filteredProjects.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            type: '',
+            status: '',
+            startDate: '',
+            endDate: ''
+        });
+    };
 
     const handleSelectAll = (checked) => {
         if (checked) {
@@ -108,6 +136,12 @@ export const ClientProjectsTab = ({ clientName }) => {
                             </div>
                         </div>
                     )}
+                    <div className="ml-auto">
+                        <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Clear Filters
+                        </Button>
+                    </div>
                 </div>
 
                 <div
@@ -134,6 +168,51 @@ export const ClientProjectsTab = ({ clientName }) => {
                                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Start Date</th>
                                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">End Date</th>
                                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Created By</th>
+                            </tr>
+                            {/* Filter Row */}
+                            <tr className="bg-gray-50">
+                                <th className="py-2 px-4"></th>
+                                <th className="py-2 px-4"></th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        placeholder="Filter Name..."
+                                        value={filters.name}
+                                        onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4"></th>
+                                <th className="py-2 px-4"></th>
+                                <th className="py-2 px-4">
+                                    <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="All" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="Active">Active</SelectItem>
+                                            <SelectItem value="Completed">Completed</SelectItem>
+                                            <SelectItem value="On Hold">On Hold</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        type="date"
+                                        value={filters.startDate}
+                                        onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        type="date"
+                                        value={filters.endDate}
+                                        onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4"></th>
                             </tr>
                         </thead>
                         <tbody className="bg-white">
@@ -173,7 +252,7 @@ export const ClientProjectsTab = ({ clientName }) => {
                             ) : (
                                 <tr>
                                     <td colSpan="9" className="py-8 text-center text-gray-500">
-                                        No projects found for this client.
+                                        No projects found.
                                     </td>
                                 </tr>
                             )}
@@ -184,7 +263,7 @@ export const ClientProjectsTab = ({ clientName }) => {
                 {/* Pagination */}
                 <div className="flex items-center justify-between mt-4">
                     <div className="text-sm text-gray-600 whitespace-nowrap">
-                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, clientProjects.length)} of {clientProjects.length}
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredProjects.length)} of {filteredProjects.length}
                     </div>
                     <Pagination>
                         <PaginationContent>

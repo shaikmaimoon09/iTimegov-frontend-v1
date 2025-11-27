@@ -28,15 +28,40 @@ export const MembersTab = ({ project }) => {
     assignedBy: currentUser
   });
 
+  const [filters, setFilters] = useState({
+    username: '',
+    role: '',
+    labourCategory: '',
+    status: ''
+  });
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const members = project.members || [];
-  const totalPages = Math.ceil(members.length / itemsPerPage);
-  const paginatedMembers = members.slice(
+
+  const filteredMembers = members.filter(member => {
+    if (filters.username && !member.username.toLowerCase().includes(filters.username.toLowerCase())) return false;
+    if (filters.role && filters.role !== 'all' && member.role !== filters.role) return false;
+    if (filters.labourCategory && filters.labourCategory !== 'all' && member.labourCategory !== filters.labourCategory) return false;
+    if (filters.status && filters.status !== 'all' && member.status !== filters.status) return false;
+    return true;
+  });
+
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const paginatedMembers = filteredMembers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const clearFilters = () => {
+    setFilters({
+      username: '',
+      role: '',
+      labourCategory: '',
+      status: ''
+    });
+  };
 
   const handleUsernameChange = (value) => {
     const employee = employees.find(e => e.username === value);
@@ -127,159 +152,166 @@ export const MembersTab = ({ project }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <h3 className="text-xl font-semibold text-gray-900">Members of Project {project.name}</h3>
-
-          {/* Toolbar - appears when rows are selected */}
-          {selectedRows.length > 0 && (
-            <div className="flex items-center gap-2 ml-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-              <span className="text-sm font-medium text-blue-900">
-                {selectedRows.length} selected
-              </span>
-              <div className="flex items-center gap-1 ml-2 border-l border-blue-300 pl-2">
-                {selectedRows.length === 1 && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleView}
-                      className="h-8 w-8 p-0 hover:bg-blue-100"
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4 text-blue-600" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleEdit}
-                      className="h-8 w-8 p-0 hover:bg-blue-100"
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4 text-blue-600" />
-                    </Button>
-                  </>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDelete}
-                  className="h-8 w-8 p-0 hover:bg-red-100"
-                  title="Delete"
-                >
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button data-testid="add-member-btn" className="bg-blue-600 hover:bg-blue-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Member
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center gap-2">
+            {selectedRows.length > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md border border-blue-100">
+                <span className="text-sm text-blue-700 font-medium">{selectedRows.length} selected</span>
+                <div className="h-4 w-px bg-blue-200 mx-2"></div>
+                <div className="flex items-center gap-1">
+                  {selectedRows.length === 1 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleView}
+                        className="h-8 w-8 p-0 hover:bg-blue-100"
+                        title="View"
+                      >
+                        <Eye className="h-4 w-4 text-blue-600" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleEdit}
+                        className="h-8 w-8 p-0 hover:bg-blue-100"
+                        title="Edit"
+                      >
+                        <Edit className="h-4 w-4 text-blue-600" />
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    className="h-8 w-8 p-0 hover:bg-red-100"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4 text-red-600" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Clear Filters
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Add Member to Project</DialogTitle>
-            </DialogHeader>
-            <div className="grid grid-cols-2 gap-4 py-4">
-              <div>
-                <Label htmlFor="username">Username *</Label>
-                <Select value={newMember.username} onValueChange={handleUsernameChange}>
-                  <SelectTrigger data-testid="select-member-username">
-                    <SelectValue placeholder="Select employee" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {employees.map(emp => (
-                      <SelectItem key={emp.id} value={emp.username}>{emp.username}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={newMember.email}
-                  disabled
-                  placeholder="Auto-filled"
-                />
-              </div>
-              <div>
-                <Label htmlFor="designation">Designation</Label>
-                <Input
-                  id="designation"
-                  value={newMember.designation}
-                  disabled
-                  placeholder="Auto-filled"
-                />
-              </div>
-              <div>
-                <Label htmlFor="role">Project Role *</Label>
-                <Select value={newMember.role} onValueChange={(value) => setNewMember({ ...newMember, role: value })}>
-                  <SelectTrigger data-testid="select-member-role">
-                    <SelectValue placeholder="Select role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Manager">Manager</SelectItem>
-                    <SelectItem value="Developer">Developer</SelectItem>
-                    <SelectItem value="Designer">Designer</SelectItem>
-                    <SelectItem value="QA">QA</SelectItem>
-                    <SelectItem value="DevOps">DevOps</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="labour-category">Labour Category</Label>
-                <Select value={newMember.labourCategory} onValueChange={handleLabourCategoryChange}>
-                  <SelectTrigger data-testid="select-labour-category">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {labourCategories.map(cat => (
-                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="hourly-cost">Hourly Labour Cost</Label>
-                <Input
-                  id="hourly-cost"
-                  type="number"
-                  value={newMember.hourlyCostRate}
-                  onChange={(e) => setNewMember({ ...newMember, hourlyCostRate: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="billing-rate">Client Billing Rate</Label>
-                <Input
-                  id="billing-rate"
-                  type="number"
-                  value={newMember.clientBillingRate}
-                  onChange={(e) => setNewMember({ ...newMember, clientBillingRate: e.target.value })}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select value={newMember.status} onValueChange={(value) => setNewMember({ ...newMember, status: value })}>
-                  <SelectTrigger data-testid="select-member-status">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-member-btn">Cancel</Button>
-              <Button onClick={handleAddMember} className="bg-blue-600 hover:bg-blue-700" data-testid="save-member-btn">Save</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+              <DialogTrigger asChild>
+                <Button data-testid="add-member-btn" className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add Member to Project</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div>
+                    <Label htmlFor="username">Username *</Label>
+                    <Select value={newMember.username} onValueChange={handleUsernameChange}>
+                      <SelectTrigger data-testid="select-member-username">
+                        <SelectValue placeholder="Select employee" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {employees.map(emp => (
+                          <SelectItem key={emp.id} value={emp.username}>{emp.username}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      value={newMember.email}
+                      disabled
+                      placeholder="Auto-filled"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="designation">Designation</Label>
+                    <Input
+                      id="designation"
+                      value={newMember.designation}
+                      disabled
+                      placeholder="Auto-filled"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="role">Project Role *</Label>
+                    <Select value={newMember.role} onValueChange={(value) => setNewMember({ ...newMember, role: value })}>
+                      <SelectTrigger data-testid="select-member-role">
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Manager">Manager</SelectItem>
+                        <SelectItem value="Developer">Developer</SelectItem>
+                        <SelectItem value="Designer">Designer</SelectItem>
+                        <SelectItem value="QA">QA</SelectItem>
+                        <SelectItem value="DevOps">DevOps</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="labour-category">Labour Category</Label>
+                    <Select value={newMember.labourCategory} onValueChange={handleLabourCategoryChange}>
+                      <SelectTrigger data-testid="select-labour-category">
+                        <SelectValue placeholder="Select category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {labourCategories.map(cat => (
+                          <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="hourly-cost">Hourly Labour Cost</Label>
+                    <Input
+                      id="hourly-cost"
+                      type="number"
+                      value={newMember.hourlyCostRate}
+                      onChange={(e) => setNewMember({ ...newMember, hourlyCostRate: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="billing-rate">Client Billing Rate</Label>
+                    <Input
+                      id="billing-rate"
+                      type="number"
+                      value={newMember.clientBillingRate}
+                      onChange={(e) => setNewMember({ ...newMember, clientBillingRate: e.target.value })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select value={newMember.status} onValueChange={(value) => setNewMember({ ...newMember, status: value })}>
+                      <SelectTrigger data-testid="select-member-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-member-btn">Cancel</Button>
+                  <Button onClick={handleAddMember} className="bg-blue-600 hover:bg-blue-700" data-testid="save-member-btn">Save</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
       </div>
 
       {/* Members Table */}
@@ -290,19 +322,67 @@ export const MembersTab = ({ project }) => {
               <th className="w-12 py-3 px-4">
                 <Checkbox
                   checked={selectedRows.length === paginatedMembers.length && paginatedMembers.length > 0}
-                  onCheckedChange={(checked) => handleSelectAll(checked)}
+                  onCheckedChange={handleSelectAll}
                 />
               </th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Username</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Designation</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Member Name</th>
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Role</th>
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Labour Category</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Hourly Cost Rate</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Client Billing Rate</th>
               <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Assigned Date</th>
-              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Assigned By</th>
+              <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+            </tr>
+            {/* Filter Row */}
+            <tr className="bg-gray-50">
+              <th className="py-2 px-4"></th>
+              <th className="py-2 px-4">
+                <Input
+                  placeholder="Filter Name..."
+                  value={filters.username}
+                  onChange={(e) => setFilters({ ...filters, username: e.target.value })}
+                  className="h-8 text-xs"
+                />
+              </th>
+              <th className="py-2 px-4">
+                <Select value={filters.role} onValueChange={(value) => setFilters({ ...filters, role: value === 'all' ? '' : value })}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Manager">Manager</SelectItem>
+                    <SelectItem value="Developer">Developer</SelectItem>
+                    <SelectItem value="Designer">Designer</SelectItem>
+                    <SelectItem value="QA">QA</SelectItem>
+                    <SelectItem value="DevOps">DevOps</SelectItem>
+                  </SelectContent>
+                </Select>
+              </th>
+              <th className="py-2 px-4">
+                <Select value={filters.labourCategory} onValueChange={(value) => setFilters({ ...filters, labourCategory: value === 'all' ? '' : value })}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {labourCategories.map(cat => (
+                      <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </th>
+              <th className="py-2 px-4">
+                <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </th>
+              <th className="py-2 px-4"></th>
             </tr>
           </thead>
           <tbody className="bg-white">
@@ -316,22 +396,26 @@ export const MembersTab = ({ project }) => {
                     />
                   </td>
                   <td className="py-3 px-4 text-sm font-medium whitespace-nowrap">{member.username}</td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">{member.email}</td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">{member.designation}</td>
                   <td className="py-3 px-4 text-sm whitespace-nowrap">{member.role}</td>
                   <td className="py-3 px-4 text-sm whitespace-nowrap">{member.labourCategory || '-'}</td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">${member.hourlyCostRate}/hr</td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">${member.clientBillingRate}/hr</td>
                   <td className="py-3 px-4">
                     <Badge className="bg-green-100 text-green-800">{member.status}</Badge>
                   </td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">{member.assignedDate}</td>
-                  <td className="py-3 px-4 text-sm whitespace-nowrap">{member.assignedBy}</td>
+                  <td className="py-3 px-4 text-sm whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => alert(`Viewing ${member.username}`)} title="View">
+                        <Eye className="h-4 w-4 text-gray-500" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => alert(`Editing ${member.username}`)} title="Edit">
+                        <Edit className="h-4 w-4 text-gray-500" />
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="11" className="text-center py-8 text-gray-500 whitespace-nowrap">
+                <td colSpan="6" className="text-center py-8 text-gray-500 whitespace-nowrap">
                   No members found. Click "Add Member" to assign team members.
                 </td>
               </tr>
@@ -343,7 +427,7 @@ export const MembersTab = ({ project }) => {
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <div className="text-sm text-gray-600 whitespace-nowrap">
-          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, members.length)} of {members.length}
+          Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredMembers.length)} of {filteredMembers.length}
         </div>
         <Pagination>
           <PaginationContent>

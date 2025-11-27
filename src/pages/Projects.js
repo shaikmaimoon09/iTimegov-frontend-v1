@@ -22,7 +22,10 @@ export const Projects = () => {
     name: '',
     client: '',
     status: '',
-    dateRange: { start: '', end: '' }
+    contact: '',
+    startDate: '',
+    endDate: '',
+    createdBy: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -44,7 +47,11 @@ export const Projects = () => {
     if (filters.id && !project.id.toLowerCase().includes(filters.id.toLowerCase())) return false;
     if (filters.name && !project.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
     if (filters.client && project.client !== filters.client) return false;
-    if (filters.status && project.status !== filters.status) return false;
+    if (filters.status && filters.status !== 'all' && project.status !== filters.status) return false;
+    if (filters.contact && !project.contact.toLowerCase().includes(filters.contact.toLowerCase())) return false;
+    if (filters.startDate && project.startDate < filters.startDate) return false;
+    if (filters.endDate && project.endDate > filters.endDate) return false;
+    if (filters.createdBy && !project.createdBy.toLowerCase().includes(filters.createdBy.toLowerCase())) return false;
     return true;
   });
 
@@ -78,7 +85,10 @@ export const Projects = () => {
       name: '',
       client: '',
       status: '',
-      dateRange: { start: '', end: '' }
+      contact: '',
+      startDate: '',
+      endDate: '',
+      createdBy: ''
     });
   };
 
@@ -169,6 +179,10 @@ export const Projects = () => {
               )}
             </div>
             <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+                <Filter className="h-4 w-4 mr-2" />
+                Clear Filters
+              </Button>
               <Button
                 data-testid="download-btn"
                 variant="outline"
@@ -294,59 +308,6 @@ export const Projects = () => {
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="grid grid-cols-5 gap-3 mb-6">
-            <div>
-              <Input
-                data-testid="filter-id"
-                placeholder="Project ID"
-                value={filters.id}
-                onChange={(e) => setFilters({ ...filters, id: e.target.value })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <Input
-                data-testid="filter-name"
-                placeholder="Project Name"
-                value={filters.name}
-                onChange={(e) => setFilters({ ...filters, name: e.target.value })}
-                className="w-full"
-              />
-            </div>
-            <div>
-              <Select value={filters.client} onValueChange={(value) => setFilters({ ...filters, client: value })}>
-                <SelectTrigger data-testid="filter-client">
-                  <SelectValue placeholder="Client" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Clients</SelectItem>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.name}>{client.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value })}>
-                <SelectTrigger data-testid="filter-status">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="On Hold">On Hold</SelectItem>
-                  <SelectItem value="Completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Button variant="outline" onClick={clearFilters} className="w-full" data-testid="clear-filters-btn">
-                <X className="h-4 w-4 mr-2" />
-                Clear Filters
-              </Button>
-            </div>
-          </div>
 
           {/* Projects Table */}
           <div className="border rounded-lg overflow-hidden shadow-sm overflow-x-auto">
@@ -367,6 +328,84 @@ export const Projects = () => {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Start Date</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">End Date</th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Created By</th>
+                </tr>
+                {/* Filter Row */}
+                <tr className="bg-gray-50">
+                  <th className="py-2 px-4"></th>
+                  <th className="py-2 px-4">
+                    <Input
+                      placeholder="Filter ID..."
+                      value={filters.id}
+                      onChange={(e) => setFilters({ ...filters, id: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
+                  <th className="py-2 px-4">
+                    <Input
+                      placeholder="Filter Name..."
+                      value={filters.name}
+                      onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
+                  <th className="py-2 px-4">
+                    <Select value={filters.client} onValueChange={(value) => setFilters({ ...filters, client: value === 'all' ? '' : value })}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        {clients.map(client => (
+                          <SelectItem key={client.id} value={client.name}>{client.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </th>
+                  <th className="py-2 px-4">
+                    <Input
+                      placeholder="Filter Contact..."
+                      value={filters.contact}
+                      onChange={(e) => setFilters({ ...filters, contact: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
+                  <th className="py-2 px-4">
+                    <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue placeholder="All" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="On Hold">On Hold</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </th>
+                  <th className="py-2 px-4">
+                    <Input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
+                  <th className="py-2 px-4">
+                    <Input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
+                  <th className="py-2 px-4">
+                    <Input
+                      placeholder="Filter Creator..."
+                      value={filters.createdBy}
+                      onChange={(e) => setFilters({ ...filters, createdBy: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white">

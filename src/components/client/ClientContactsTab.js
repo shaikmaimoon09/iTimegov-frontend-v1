@@ -32,14 +32,41 @@ export const ClientContactsTab = ({ clientName }) => {
         status: 'Active'
     });
 
+    const [filters, setFilters] = useState({
+        name: '',
+        email: '',
+        designation: '',
+        company: '',
+        status: ''
+    });
+
     // Filter contacts for this client
     const clientContacts = contacts.filter(c => c.company === clientName);
 
-    const totalPages = Math.max(1, Math.ceil(clientContacts.length / itemsPerPage));
-    const paginatedContacts = clientContacts.slice(
+    const filteredContacts = clientContacts.filter(contact => {
+        if (filters.name && !contact.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+        if (filters.email && !contact.email.toLowerCase().includes(filters.email.toLowerCase())) return false;
+        if (filters.designation && !contact.designation.toLowerCase().includes(filters.designation.toLowerCase())) return false;
+        if (filters.company && !contact.company.toLowerCase().includes(filters.company.toLowerCase())) return false;
+        if (filters.status && filters.status !== 'all' && contact.status !== filters.status) return false;
+        return true;
+    });
+
+    const totalPages = Math.max(1, Math.ceil(filteredContacts.length / itemsPerPage));
+    const paginatedContacts = filteredContacts.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            email: '',
+            designation: '',
+            company: '',
+            status: ''
+        });
+    };
 
     const handleSelectAll = (checked) => {
         if (checked) {
@@ -98,7 +125,6 @@ export const ClientContactsTab = ({ clientName }) => {
             status: 'Active'
         });
     };
-
     return (
         <Card>
             <CardContent className="p-6">
@@ -149,67 +175,72 @@ export const ClientContactsTab = ({ clientName }) => {
                         )}
                     </div>
 
-                    {/* Add Contact Button */}
-                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                        <DialogTrigger asChild>
-                            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-contact-btn">
-                                <Plus className="h-4 w-4 mr-2" />
-                                Add Contact
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Contact for {clientName}</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div>
-                                    <Label>Name *</Label>
-                                    <Input
-                                        value={newContact.name}
-                                        onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
-                                        placeholder="Contact name"
-                                    />
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Clear Filters
+                        </Button>
+                        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                            <DialogTrigger asChild>
+                                <Button className="bg-blue-600 hover:bg-blue-700">
+                                    <Plus className="h-4 w-4 mr-2" />
+                                    Add Contact
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add New Contact for {clientName}</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div>
+                                        <Label>Name *</Label>
+                                        <Input
+                                            value={newContact.name}
+                                            onChange={(e) => setNewContact({ ...newContact, name: e.target.value })}
+                                            placeholder="Contact name"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Email</Label>
+                                        <Input
+                                            type="email"
+                                            value={newContact.email}
+                                            onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
+                                            placeholder="email@example.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Phone</Label>
+                                        <Input
+                                            value={newContact.phone}
+                                            onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
+                                            placeholder="+1234567890"
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label>Designation</Label>
+                                        <Input
+                                            value={newContact.designation}
+                                            onChange={(e) => setNewContact({ ...newContact, designation: e.target.value })}
+                                            placeholder="e.g. CTO, Manager"
+                                        />
+                                    </div>
+                                    <div className="bg-blue-50 border border-blue-200 rounded p-3">
+                                        <p className="text-sm text-blue-800">
+                                            <strong>Company:</strong> {clientName}
+                                        </p>
+                                        <p className="text-xs text-blue-600 mt-1">
+                                            This contact will be automatically associated with {clientName}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <Label>Email</Label>
-                                    <Input
-                                        type="email"
-                                        value={newContact.email}
-                                        onChange={(e) => setNewContact({ ...newContact, email: e.target.value })}
-                                        placeholder="email@example.com"
-                                    />
+                                <div className="flex justify-end gap-2">
+                                    <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
+                                    <Button onClick={handleAddContact} className="bg-blue-600 hover:bg-blue-700">Save</Button>
                                 </div>
-                                <div>
-                                    <Label>Phone</Label>
-                                    <Input
-                                        value={newContact.phone}
-                                        onChange={(e) => setNewContact({ ...newContact, phone: e.target.value })}
-                                        placeholder="+1234567890"
-                                    />
-                                </div>
-                                <div>
-                                    <Label>Designation</Label>
-                                    <Input
-                                        value={newContact.designation}
-                                        onChange={(e) => setNewContact({ ...newContact, designation: e.target.value })}
-                                        placeholder="e.g. CTO, Manager"
-                                    />
-                                </div>
-                                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                                    <p className="text-sm text-blue-800">
-                                        <strong>Company:</strong> {clientName}
-                                    </p>
-                                    <p className="text-xs text-blue-600 mt-1">
-                                        This contact will be automatically associated with {clientName}
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex justify-end gap-2">
-                                <Button variant="outline" onClick={() => setShowAddDialog(false)}>Cancel</Button>
-                                <Button onClick={handleAddContact} className="bg-blue-600 hover:bg-blue-700">Save</Button>
-                            </div>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 </div>
 
                 <div className="border rounded-lg overflow-hidden shadow-sm">
@@ -222,11 +253,61 @@ export const ClientContactsTab = ({ clientName }) => {
                                         onCheckedChange={handleSelectAll}
                                     />
                                 </th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Name</th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Email</th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Phone</th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Designation</th>
-                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Contact Name</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Email</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Designation</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Company</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                            </tr>
+                            {/* Filter Row */}
+                            <tr className="bg-gray-50">
+                                <th className="py-2 px-4"></th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        placeholder="Filter Name..."
+                                        value={filters.name}
+                                        onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        placeholder="Filter Email..."
+                                        value={filters.email}
+                                        onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        placeholder="Filter Designation..."
+                                        value={filters.designation}
+                                        onChange={(e) => setFilters({ ...filters, designation: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Input
+                                        placeholder="Filter Company..."
+                                        value={filters.company}
+                                        onChange={(e) => setFilters({ ...filters, company: e.target.value })}
+                                        className="h-8 text-xs"
+                                    />
+                                </th>
+                                <th className="py-2 px-4">
+                                    <Select value={filters.status} onValueChange={(value) => setFilters({ ...filters, status: value === 'all' ? '' : value })}>
+                                        <SelectTrigger className="h-8 text-xs">
+                                            <SelectValue placeholder="All" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="Active">Active</SelectItem>
+                                            <SelectItem value="Inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </th>
+                                <th className="py-2 px-4"></th>
                             </tr>
                         </thead>
                         <tbody className="bg-white">
@@ -241,17 +322,20 @@ export const ClientContactsTab = ({ clientName }) => {
                                         </td>
                                         <td className="py-3 px-4 text-sm font-medium">{contact.name}</td>
                                         <td className="py-3 px-4 text-sm">{contact.email}</td>
-                                        <td className="py-3 px-4 text-sm">{contact.phone}</td>
                                         <td className="py-3 px-4 text-sm">{contact.designation}</td>
+                                        <td className="py-3 px-4 text-sm">{contact.company}</td>
                                         <td className="py-3 px-4">
                                             <Badge className="bg-green-100 text-green-800">{contact.status}</Badge>
+                                        </td>
+                                        <td className="py-3 px-4">
+                                            {/* Actions placeholder if needed */}
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="6" className="py-8 text-center text-gray-500">
-                                        No contacts found for this client.
+                                    <td colSpan="7" className="py-8 text-center text-gray-500">
+                                        No contacts found.
                                     </td>
                                 </tr>
                             )}
@@ -262,7 +346,7 @@ export const ClientContactsTab = ({ clientName }) => {
                 {/* Pagination */}
                 <div className="flex items-center justify-between mt-4">
                     <div className="text-sm text-gray-600 whitespace-nowrap">
-                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, clientContacts.length)} of {clientContacts.length}
+                        Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredContacts.length)} of {filteredContacts.length}
                     </div>
                     <Pagination>
                         <PaginationContent>
@@ -309,3 +393,4 @@ export const ClientContactsTab = ({ clientName }) => {
         </Card>
     );
 };
+

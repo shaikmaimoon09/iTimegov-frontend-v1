@@ -33,14 +33,35 @@ export const LabourCategory = () => {
         billingRate: ''
     });
 
+    const [filters, setFilters] = useState({
+        name: '',
+        hourlyCost: '',
+        billingRate: ''
+    });
+
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
 
-    const totalPages = Math.ceil(labourCategories.length / itemsPerPage);
-    const paginatedCategories = labourCategories.slice(
+    const filteredCategories = labourCategories.filter(category => {
+        if (filters.name && !category.name.toLowerCase().includes(filters.name.toLowerCase())) return false;
+        if (filters.hourlyCost && !category.hourlyCost.toString().includes(filters.hourlyCost)) return false;
+        if (filters.billingRate && !category.billingRate.toString().includes(filters.billingRate)) return false;
+        return true;
+    });
+
+    const totalPages = Math.ceil(filteredCategories.length / itemsPerPage);
+    const paginatedCategories = filteredCategories.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
+
+    const clearFilters = () => {
+        setFilters({
+            name: '',
+            hourlyCost: '',
+            billingRate: ''
+        });
+    };
 
     const handleAddCategoryType = () => {
         if (!newCategoryType.trim()) return;
@@ -108,155 +129,130 @@ export const LabourCategory = () => {
 
     return (
         <div className="space-y-6" data-testid="labour-category-tab">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <h3 className="text-xl font-semibold text-gray-900">Labour Categories</h3>
-
-                    {/* Toolbar - appears when rows are selected (placed beside title) */}
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
                     {selectedRows.length > 0 && (
-                        <div className="flex items-center gap-2 ml-4 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                            <span className="text-sm font-medium text-blue-900">
-                                {selectedRows.length} selected
-                            </span>
-                            <div className="flex items-center gap-1 ml-2 border-l border-blue-300 pl-2">
+                        <div className="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-md border border-blue-100">
+                            <span className="text-sm text-blue-700 font-medium">{selectedRows.length} selected</span>
+                            <div className="h-4 w-px bg-blue-200 mx-2"></div>
+                            <div className="flex items-center gap-1">
                                 {selectedRows.length === 1 && (
                                     <>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={handleView}
-                                            className="h-8 w-8 p-0 hover:bg-blue-100"
-                                            title="View"
-                                        >
-                                            <Eye className="h-4 w-4 text-blue-600" />
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={handleEdit}
-                                            className="h-8 w-8 p-0 hover:bg-blue-100"
-                                            title="Edit"
-                                        >
-                                            <Edit className="h-4 w-4 text-blue-600" />
-                                        </Button>
+                                        <Button variant="ghost" size="sm" onClick={handleView} className="h-8 w-8 p-0 hover:bg-blue-100" title="View"><Eye className="h-4 w-4 text-blue-600" /></Button>
+                                        <Button variant="ghost" size="sm" onClick={handleEdit} className="h-8 w-8 p-0 hover:bg-blue-100" title="Edit"><Edit className="h-4 w-4 text-blue-600" /></Button>
                                     </>
                                 )}
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleDelete}
-                                    className="h-8 w-8 p-0 hover:bg-red-100"
-                                    title="Delete"
-                                >
-                                    <Trash2 className="h-4 w-4 text-red-600" />
-                                </Button>
+                                <Button variant="ghost" size="sm" onClick={handleDelete} className="h-8 w-8 p-0 hover:bg-red-100" title="Delete"><Trash2 className="h-4 w-4 text-red-600" /></Button>
                             </div>
                         </div>
                     )}
-
                 </div>
-
-                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                    <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-category-btn">
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Labour Category
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Add Labour Category</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div>
-                                <Label htmlFor="category-name">Labour Category Name *</Label>
-                                <Select value={newCategory.name} onValueChange={(value) => {
-                                    if (value === 'add_new') {
-                                        setShowAddCategoryTypeDialog(true);
-                                    } else {
-                                        setNewCategory({ ...newCategory, name: value });
-                                    }
-                                }}>
-                                    <SelectTrigger data-testid="select-category-name">
-                                        <SelectValue placeholder="Select category" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {categoryTypes.map((type) => (
-                                            <SelectItem key={type} value={type}>
-                                                {type}
-                                            </SelectItem>
-                                        ))}
-                                        <div className="border-t mt-1 pt-1">
-                                            <SelectItem value="add_new" className="text-blue-600 font-medium">
-                                                <div className="flex items-center gap-2">
-                                                    <Plus className="h-4 w-4" />
-                                                    Add Category Type
-                                                </div>
-                                            </SelectItem>
-                                        </div>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div>
-                                <Label htmlFor="hourly-cost">Hourly Labour Cost *</Label>
-                                <Input
-                                    id="hourly-cost"
-                                    type="number"
-                                    value={newCategory.hourlyCost}
-                                    onChange={(e) => setNewCategory({ ...newCategory, hourlyCost: e.target.value })}
-                                    placeholder="0"
-                                    data-testid="input-hourly-cost"
-                                />
-                            </div>
-                            <div>
-                                <Label htmlFor="billing-rate">Client Billing Rate *</Label>
-                                <Input
-                                    id="billing-rate"
-                                    type="number"
-                                    value={newCategory.billingRate}
-                                    onChange={(e) => setNewCategory({ ...newCategory, billingRate: e.target.value })}
-                                    placeholder="0"
-                                    data-testid="input-billing-rate"
-                                />
-                            </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-category-btn">Cancel</Button>
-                            <Button onClick={handleAddCategory} className="bg-blue-600 hover:bg-blue-700" data-testid="save-category-btn">Save</Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Add Category Type Dialog */}
-                <Dialog open={showAddCategoryTypeDialog} onOpenChange={setShowAddCategoryTypeDialog}>
-                    <DialogContent className="max-w-md">
-                        <DialogHeader>
-                            <DialogTitle>Add New Category Type</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 py-4">
-                            <div>
-                                <Label>Category Type Name *</Label>
-                                <Input
-                                    value={newCategoryType}
-                                    onChange={(e) => setNewCategoryType(e.target.value)}
-                                    placeholder="e.g. Tech Lead"
-                                    onKeyPress={(e) => {
-                                        if (e.key === 'Enter') {
-                                            handleAddCategoryType();
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" onClick={clearFilters} className="text-gray-600 border-gray-300 hover:bg-gray-50" data-testid="clear-filters-btn">
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Clear Filters
+                    </Button>
+                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                        <DialogTrigger asChild>
+                            <Button className="bg-blue-600 hover:bg-blue-700">
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Category
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Add Labour Category</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <Label htmlFor="category-name">Labour Category Name *</Label>
+                                    <Select value={newCategory.name} onValueChange={(value) => {
+                                        if (value === 'add_new') {
+                                            setShowAddCategoryTypeDialog(true);
+                                        } else {
+                                            setNewCategory({ ...newCategory, name: value });
                                         }
-                                    }}
-                                />
+                                    }}>
+                                        <SelectTrigger data-testid="select-category-name">
+                                            <SelectValue placeholder="Select category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {categoryTypes.map((type) => (
+                                                <SelectItem key={type} value={type}>
+                                                    {type}
+                                                </SelectItem>
+                                            ))}
+                                            <div className="border-t mt-1 pt-1">
+                                                <SelectItem value="add_new" className="text-blue-600 font-medium">
+                                                    <div className="flex items-center gap-2">
+                                                        <Plus className="h-4 w-4" />
+                                                        Add Category Type
+                                                    </div>
+                                                </SelectItem>
+                                            </div>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="hourly-cost">Hourly Labour Cost *</Label>
+                                    <Input
+                                        id="hourly-cost"
+                                        type="number"
+                                        value={newCategory.hourlyCost}
+                                        onChange={(e) => setNewCategory({ ...newCategory, hourlyCost: e.target.value })}
+                                        placeholder="0"
+                                        data-testid="input-hourly-cost"
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="billing-rate">Client Billing Rate *</Label>
+                                    <Input
+                                        id="billing-rate"
+                                        type="number"
+                                        value={newCategory.billingRate}
+                                        onChange={(e) => setNewCategory({ ...newCategory, billingRate: e.target.value })}
+                                        placeholder="0"
+                                        data-testid="input-billing-rate"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                        <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => {
-                                setShowAddCategoryTypeDialog(false);
-                                setNewCategoryType('');
-                            }}>Cancel</Button>
-                            <Button onClick={handleAddCategoryType} className="bg-blue-600 hover:bg-blue-700">Add</Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => setShowAddDialog(false)} data-testid="cancel-category-btn">Cancel</Button>
+                                <Button onClick={handleAddCategory} className="bg-blue-600 hover:bg-blue-700" data-testid="save-category-btn">Save</Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={showAddCategoryTypeDialog} onOpenChange={setShowAddCategoryTypeDialog}>
+                        <DialogContent className="max-w-md">
+                            <DialogHeader>
+                                <DialogTitle>Add New Category Type</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-4 py-4">
+                                <div>
+                                    <Label>Category Type Name *</Label>
+                                    <Input
+                                        value={newCategoryType}
+                                        onChange={(e) => setNewCategoryType(e.target.value)}
+                                        placeholder="e.g. Tech Lead"
+                                        onKeyPress={(e) => {
+                                            if (e.key === 'Enter') {
+                                                handleAddCategoryType();
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2">
+                                <Button variant="outline" onClick={() => {
+                                    setShowAddCategoryTypeDialog(false);
+                                    setNewCategoryType('');
+                                }}>Cancel</Button>
+                                <Button onClick={handleAddCategoryType} className="bg-blue-600 hover:bg-blue-700">Add</Button>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
+                </div>
             </div>
 
             <div className="border rounded-lg overflow-hidden shadow-sm">
@@ -266,14 +262,42 @@ export const LabourCategory = () => {
                             <th className="w-12 py-3 px-4">
                                 <Checkbox
                                     checked={selectedRows.length === paginatedCategories.length && paginatedCategories.length > 0}
-                                    onCheckedChange={(checked) => handleSelectAll(checked)}
+                                    onCheckedChange={handleSelectAll}
                                 />
                             </th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Labour Category Name</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Hourly Labour Cost</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Client Billing Rate</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Created On</th>
-                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Created By</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Category Name</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Hourly Cost</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Billing Rate</th>
+                            <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 whitespace-nowrap">Actions</th>
+                        </tr>
+                        {/* Filter Row */}
+                        <tr className="bg-gray-50">
+                            <th className="py-2 px-4"></th>
+                            <th className="py-2 px-4">
+                                <Input
+                                    placeholder="Filter Name..."
+                                    value={filters.name}
+                                    onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+                                    className="h-8 text-xs"
+                                />
+                            </th>
+                            <th className="py-2 px-4">
+                                <Input
+                                    placeholder="Filter Cost..."
+                                    value={filters.hourlyCost}
+                                    onChange={(e) => setFilters({ ...filters, hourlyCost: e.target.value })}
+                                    className="h-8 text-xs"
+                                />
+                            </th>
+                            <th className="py-2 px-4">
+                                <Input
+                                    placeholder="Filter Rate..."
+                                    value={filters.billingRate}
+                                    onChange={(e) => setFilters({ ...filters, billingRate: e.target.value })}
+                                    className="h-8 text-xs"
+                                />
+                            </th>
+                            <th className="py-2 px-4"></th>
                         </tr>
                     </thead>
                     <tbody className="bg-white">
@@ -291,7 +315,7 @@ export const LabourCategory = () => {
                                     <td className="py-3 px-4 text-sm">${category.billingRate}/hr</td>
                                     <td className="py-3 px-4 text-sm">{category.createdOn}</td>
                                     <td className="py-3 px-4 text-sm">{category.createdBy}</td>
-                                </tr>
+                                </tr >
                             ))
                         ) : (
                             <tr>
@@ -300,14 +324,14 @@ export const LabourCategory = () => {
                                 </td>
                             </tr>
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    </tbody >
+                </table >
+            </div >
 
             {/* Pagination */}
-            <div className="flex items-center justify-between mt-4">
+            < div className="flex items-center justify-between mt-4" >
                 <div className="text-sm text-gray-600 whitespace-nowrap">
-                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, labourCategories.length)} of {labourCategories.length}
+                    Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredCategories.length)} of {filteredCategories.length}
                 </div>
                 <Pagination>
                     <PaginationContent>
@@ -349,7 +373,7 @@ export const LabourCategory = () => {
                         <SelectItem value="50">50</SelectItem>
                     </SelectContent>
                 </Select>
-            </div>
+            </div >
         </div >
     );
 };
