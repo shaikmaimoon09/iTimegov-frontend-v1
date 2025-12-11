@@ -22,7 +22,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collap
 export const Layout = ({ children }) => {
   const location = useLocation();
   const { currentUser } = useApp();
-  const [reportsOpen, setReportsOpen] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -34,18 +33,7 @@ export const Layout = ({ children }) => {
     { path: '/approvals', label: 'Approvals', icon: CheckCircle },
     { path: '/projects', label: 'Projects', icon: FolderKanban },
     { path: '/clients', label: 'Clients', icon: Building2 },
-  ];
-
-  const reportItems = [
-    { path: '/reports/project', label: 'Project Reports' },
-    { path: '/reports/timesheet', label: 'Timesheet Reports' },
-    { path: '/reports/member-cost', label: 'Member Cost Reports' },
-    { path: '/reports/task-cost', label: 'Task Cost Reports' },
-    { path: '/reports/budget', label: 'Budget Reports' },
-    { path: '/reports/milestone', label: 'Milestone Performance' },
-    { path: '/reports/variance', label: 'Variance Analysis' },
-    { path: '/reports/evm', label: 'Earned Value Reports' },
-    { path: '/reports/baseline', label: 'Baseline History' },
+    { path: '/reports', label: 'Reports', icon: BarChart3 },
   ];
 
   const adminItems = [
@@ -90,38 +78,7 @@ export const Layout = ({ children }) => {
             );
           })}
 
-          {/* Reports Collapsible */}
-          <Collapsible open={reportsOpen} onOpenChange={setReportsOpen}>
-            <CollapsibleTrigger
-              data-testid="nav-reports-toggle"
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-blue-50 hover:bg-blue-500 w-full transition-all"
-            >
-              <BarChart3 className="h-5 w-5 flex-shrink-0" />
-              {sidebarOpen && (
-                <>
-                  <span className="font-medium flex-1 text-left">Reports</span>
-                  <ChevronDown className={`h-4 w-4 transition-transform ${reportsOpen ? 'rotate-180' : ''}`} />
-                </>
-              )}
-            </CollapsibleTrigger>
-            {sidebarOpen && (
-              <CollapsibleContent className="ml-4 mt-2 space-y-1">
-                {reportItems.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    data-testid={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
-                    className={`block px-4 py-2 rounded-lg text-sm ${isActive(item.path)
-                      ? 'bg-white text-blue-600 shadow-md'
-                      : 'text-blue-100 hover:bg-blue-500'
-                      }`}
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </CollapsibleContent>
-            )}
-          </Collapsible>
+
 
           {/* Admin Management Collapsible */}
           <Collapsible open={adminOpen} onOpenChange={setAdminOpen}>
