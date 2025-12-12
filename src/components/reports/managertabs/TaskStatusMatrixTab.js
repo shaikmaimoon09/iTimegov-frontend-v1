@@ -1,42 +1,25 @@
 import React from 'react';
 import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    LineChart, Line, ComposedChart, AreaChart, Area
+    BarChart, Bar, ComposedChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../../ui/card';
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Activity } from 'lucide-react';
 
-export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, setChartType }) => {
+export const TaskStatusMatrixTab = ({
+    taskMatrix,
+    selectedMonth,
+    chartType,
+    setChartType
+}) => {
     return (
         <div className="space-y-6">
-            {/* Header */}
-            <Card className="bg-gradient-to-r from-blue-600 to-blue-500 text-white">
-                <CardContent className="pt-6">
-                    <h2 className="text-2xl font-bold mb-2">My Task Performance Report</h2>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                            <p className="opacity-80">Employee</p>
-                            <p className="font-semibold">John Doe (EMP-2024-001)</p>
-                        </div>
-                        <div>
-                            <p className="opacity-80">Report Date</p>
-                            <p className="font-semibold">{new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
-                        </div>
-                        <div>
-                            <p className="opacity-80">Total Tasks</p>
-                            <p className="font-semibold">{taskData.length}</p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* Task Performance Visualization with Toggle */}
+            {/* Visual Charts with Toggle */}
             <Card>
                 <CardHeader>
                     <div className="flex justify-between items-center">
                         <div>
-                            <CardTitle>My Task Performance Visualization</CardTitle>
-                            <p className="text-sm text-gray-600">Planned vs Actual Hours and Costs</p>
+                            <CardTitle>Task Performance Visualization</CardTitle>
+                            <p className="text-sm text-gray-600">Digital Transformation Initiative - {new Date(selectedMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</p>
                         </div>
                         <div className="flex gap-2">
                             <button
@@ -67,9 +50,9 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                     <ResponsiveContainer width="100%" height="100%">
                         {chartType === 'bar' && (
                             <BarChart
-                                data={taskData.map((task) => {
-                                    const plannedHours = task.baseline;
-                                    const actualHours = task.actual;
+                                data={taskMatrix.map((task, index) => {
+                                    const plannedHours = 100 + index * 20;
+                                    const actualHours = plannedHours * (2 - task.cpi);
                                     const plannedCost = plannedHours * 75;
                                     const actualCost = actualHours * 75;
                                     return {
@@ -101,9 +84,9 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                         )}
                         {chartType === 'line' && (
                             <ComposedChart
-                                data={taskData.map((task) => {
-                                    const plannedHours = task.baseline;
-                                    const actualHours = task.actual;
+                                data={taskMatrix.map((task, index) => {
+                                    const plannedHours = 100 + index * 20;
+                                    const actualHours = plannedHours * (2 - task.cpi);
                                     const plannedCost = plannedHours * 75;
                                     const actualCost = actualHours * 75;
                                     return {
@@ -135,9 +118,9 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                         )}
                         {chartType === 'area' && (
                             <AreaChart
-                                data={taskData.map((task) => {
-                                    const plannedHours = task.baseline;
-                                    const actualHours = task.actual;
+                                data={taskMatrix.map((task, index) => {
+                                    const plannedHours = 100 + index * 20;
+                                    const actualHours = plannedHours * (2 - task.cpi);
                                     const plannedCost = plannedHours * 75;
                                     const actualCost = actualHours * 75;
                                     return {
@@ -171,13 +154,19 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                 </CardContent>
             </Card>
 
-            {/* Task Performance Matrix Table */}
+            {/* Task-Level Variance Table */}
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>My Task Performance Matrix</CardTitle>
+                    <CardTitle>Task Status Matrix</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="border rounded-lg overflow-hidden overflow-x-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: 'white #f3f4f6' }}>
+                    <div
+                        className="border rounded-lg overflow-hidden overflow-x-auto"
+                        style={{
+                            scrollbarWidth: 'thin',
+                            scrollbarColor: 'white #f3f4f6'
+                        }}
+                    >
                         <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr>
@@ -194,20 +183,20 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                                 </tr>
                             </thead>
                             <tbody className="bg-white">
-                                {taskData.map((task, index) => {
-                                    const plannedHours = task.baseline;
-                                    const actualHours = task.actual;
+                                {taskMatrix.map((task, index) => {
+                                    const plannedHours = 100 + index * 20;
+                                    const actualHours = plannedHours * (2 - task.cpi);
                                     const plannedCost = plannedHours * 75;
                                     const actualCost = actualHours * 75;
                                     const hoursVariance = actualHours - plannedHours;
                                     const costVariance = actualCost - plannedCost;
-                                    const variancePercentage = plannedCost > 0 ? ((costVariance / plannedCost) * 100).toFixed(0) : 0;
+                                    const variancePercentage = ((costVariance / plannedCost) * 100).toFixed(0);
                                     const status = costVariance > 0 ? 'over' : costVariance < 0 ? 'under' : 'on-track';
 
                                     return (
                                         <tr key={task.id} className="border-t hover:bg-gray-50">
                                             <td className="py-3 px-4 text-sm text-blue-600 font-medium whitespace-nowrap">{task.id}</td>
-                                            <td className="py-3 px-4 text-sm whitespace-nowrap">{task.name}</td>
+                                            <td className="py-3 px-4 text-sm whitespace-nowrap">Task {task.id}</td>
                                             <td className="py-3 px-4 text-sm whitespace-nowrap">{plannedHours.toFixed(1)}h</td>
                                             <td className="py-3 px-4 text-sm whitespace-nowrap">{actualHours.toFixed(1)}h</td>
                                             <td className="py-3 px-4 text-sm whitespace-nowrap">${plannedCost.toFixed(0)}</td>
@@ -255,84 +244,138 @@ export const TaskPerformanceTab = ({ taskData, kpis, selectedMonth, chartType, s
                 </CardContent>
             </Card>
 
+            {/* Tasks Requiring Attention Summary */}
+            {(() => {
+                const tasksRequiringAttention = taskMatrix
+                    .map((task, index) => {
+                        const plannedHours = 100 + index * 20;
+                        const actualHours = plannedHours * (2 - task.cpi);
+                        const plannedCost = plannedHours * 75;
+                        const actualCost = actualHours * 75;
+                        const hoursVariance = actualHours - plannedHours;
+                        const costVariance = actualCost - plannedCost;
+                        const variancePercentage = ((costVariance / plannedCost) * 100).toFixed(0);
+                        const status = costVariance > 0 ? 'over' : costVariance < 0 ? 'under' : 'on-track';
 
-            {/* Summary */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-600">Total Hours Logged</p>
-                            <p className="text-xl font-bold">{kpis.totalActual} hours</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Average Efficiency (CPI)</p>
-                            <p className={`text-xl font-bold ${kpis.hoursEfficiency >= 1 ? 'text-green-600' : 'text-red-600'}`}>
-                                {kpis.hoursEfficiency}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                {kpis.hoursEfficiency >= 1 ? `${Math.round((kpis.hoursEfficiency - 1) * 100)}% more efficient` : `${Math.round((1 - kpis.hoursEfficiency) * 100)}% less efficient`}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Average Schedule (SPI)</p>
-                            <p className={`text-xl font-bold ${kpis.avgSPI >= 1 ? 'text-green-600' : 'text-yellow-600'}`}>
-                                {kpis.avgSPI}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                                {kpis.avgSPI >= 1 ? `${Math.round((kpis.avgSPI - 1) * 100)}% ahead` : `${Math.round((1 - kpis.avgSPI) * 100)}% behind`}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Average Health Score</p>
-                            <p className="text-xl font-bold">{kpis.avgHealth}/100</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Tasks On Track</p>
-                            <p className="text-xl font-bold text-green-600">
-                                {taskData.filter(t => t.status === 'Normal').length} ({Math.round(taskData.filter(t => t.status === 'Normal').length / taskData.length * 100)}%)
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-600">Tasks At Risk</p>
-                            <p className="text-xl font-bold text-yellow-600">
-                                {taskData.filter(t => t.status !== 'Normal').length} ({Math.round(taskData.filter(t => t.status !== 'Normal').length / taskData.length * 100)}%)
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+                        return {
+                            ...task,
+                            plannedHours,
+                            actualHours,
+                            plannedCost,
+                            actualCost,
+                            hoursVariance,
+                            costVariance,
+                            variancePercentage,
+                            status
+                        };
+                    })
+                    .filter(task => task.status === 'over')
+                    .sort((a, b) => Math.abs(b.variancePercentage) - Math.abs(a.variancePercentage));
 
-            {/* Key Insights */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Key Insights</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        {taskData.filter(t => t.cpi > 1.1).map(t => (
-                            <div key={t.id} className="flex items-start gap-2">
-                                <span className="text-green-600 font-bold">✓</span>
-                                <p className="text-sm">Excellent cost efficiency on {t.name} ({Math.round((t.cpi - 1) * 100)}% under budget)</p>
+                const criticalTasks = tasksRequiringAttention.filter(task => Math.abs(task.variancePercentage) > 20);
+                const warningTasks = tasksRequiringAttention.filter(task => Math.abs(task.variancePercentage) > 10 && Math.abs(task.variancePercentage) <= 20);
+
+                return tasksRequiringAttention.length > 0 ? (
+                    <Card className="border-l-4 border-l-red-500 shadow-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-red-600" />
+                                Tasks Requiring Attention
+                            </CardTitle>
+                            <p className="text-sm text-gray-600 mt-1">
+                                {tasksRequiringAttention.length} task{tasksRequiringAttention.length > 1 ? 's are' : ' is'} over budget
+                                {criticalTasks.length > 0 && ` (${criticalTasks.length} critical)`}
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {/* Summary Stats */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-red-50 rounded-lg">
+                                    <div>
+                                        <p className="text-sm text-gray-600">Total Over Budget</p>
+                                        <p className="text-xl font-bold text-red-600">
+                                            ${tasksRequiringAttention.reduce((sum, task) => sum + task.costVariance, 0).toFixed(0)}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Critical Tasks (&gt;20%)</p>
+                                        <p className="text-xl font-bold text-red-600">{criticalTasks.length}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-gray-600">Warning Tasks (10-20%)</p>
+                                        <p className="text-xl font-bold text-yellow-600">{warningTasks.length}</p>
+                                    </div>
+                                </div>
+
+                                {/* Task Details */}
+                                <div className="space-y-3">
+                                    {tasksRequiringAttention.map((task) => (
+                                        <div
+                                            key={task.id}
+                                            className={`border-l-4 pl-4 py-2 ${Math.abs(task.variancePercentage) > 20
+                                                ? 'border-red-500 bg-red-50'
+                                                : 'border-yellow-500 bg-yellow-50'
+                                                }`}
+                                        >
+                                            <div className="flex justify-between items-start">
+                                                <div className="flex-1">
+                                                    <p className={`font-semibold ${Math.abs(task.variancePercentage) > 20
+                                                        ? 'text-red-600'
+                                                        : 'text-yellow-600'
+                                                        }`}>
+                                                        {Math.abs(task.variancePercentage) > 20 ? '🔴' : '🟡'} {task.id}: Task {task.id}
+                                                        {Math.abs(task.variancePercentage) > 20 && ' (CRITICAL)'}
+                                                    </p>
+                                                    <ul className="text-sm text-gray-700 mt-2 space-y-1">
+                                                        <li>
+                                                            • <strong>Cost Variance:</strong> +${task.costVariance.toFixed(0)}
+                                                            <span className="text-red-600 font-semibold"> (+{task.variancePercentage}%)</span>
+                                                        </li>
+                                                        <li>
+                                                            • <strong>Hours Variance:</strong> +{task.hoursVariance.toFixed(1)}h
+                                                            <span className="text-gray-600">
+                                                                ({task.actualHours.toFixed(1)}h actual vs {task.plannedHours.toFixed(1)}h planned)
+                                                            </span>
+                                                        </li>
+                                                        <li>
+                                                            • <strong>Performance:</strong> CPI: {task.cpi} | SPI: {task.spi} | Health: {task.health}
+                                                        </li>
+                                                        <li className="mt-2">
+                                                            • <strong>Recommended Action:</strong>
+                                                            <span className="text-gray-800">
+                                                                {Math.abs(task.variancePercentage) > 20
+                                                                    ? ' Immediate review required - reassess scope and resources'
+                                                                    : ' Monitor closely and optimize resource allocation'}
+                                                            </span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
-                        ))}
-                        {taskData.filter(t => t.percent === 100).map(t => (
-                            <div key={t.id} className="flex items-start gap-2">
-                                <span className="text-green-600 font-bold">✓</span>
-                                <p className="text-sm">{t.name} completed {t.spi >= 1 ? 'ahead of schedule' : 'successfully'}</p>
-                            </div>
-                        ))}
-                        {taskData.filter(t => t.spi < 0.9 || t.cpi < 0.9).map(t => (
-                            <div key={t.id} className="flex items-start gap-2">
-                                <span className="text-yellow-600 font-bold">⚠</span>
-                                <p className="text-sm">{t.name} needs attention - {t.spi < 0.9 ? 'behind schedule' : ''} {t.spi < 0.9 && t.cpi < 0.9 ? 'and' : ''} {t.cpi < 0.9 ? 'over budget' : ''}</p>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="border-l-4 border-l-green-500 shadow-md">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                <CheckCircle className="h-5 w-5 text-green-600" />
+                                All Tasks On Track
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-gray-600">
+                                ✓ All tasks are currently within budget or under budget. No immediate attention required.
+                            </p>
+                        </CardContent>
+                    </Card>
+                );
+            })()}
+
         </div>
     );
 };
+
+export default TaskStatusMatrixTab;
